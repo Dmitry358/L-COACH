@@ -14,28 +14,34 @@
       background: #f0f2f5;
       display: flex;
       flex-direction: row;
-      align-items: center;
+      align-items: stretch;
       justify-content: flex-start;
-      padding: 0 20px;
+      overflow: hidden;
     }
+
     .form-fields {
+      min-width: 200px;
+      max-width: 900px; /* aumentato per permettere più spazio */
       width: 300px;
       background: #fff;
       padding: 25px;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      margin-right: 30px;
+      box-sizing: border-box;
     }
+
     label {
       display: block;
       margin-top: 10px;
     }
+
     input, select, button {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
       box-sizing: border-box;
     }
+
     button {
       background-color: #0078d7;
       color: white;
@@ -44,21 +50,38 @@
       margin-top: 15px;
       border-radius: 5px;
     }
+
     button:hover {
       background-color: #005fa3;
     }
+
+    /* Divisore */
+    .divider {
+      width: 6px;
+      cursor: ew-resize;
+      background: #ccc;
+      transition: background 0.2s;
+    }
+    .divider:hover, .divider.dragging {
+      background: #999;
+    }
+
     .output-area {
       flex-grow: 1;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      height: 90vh;
-      width: 60%;
+      height: 100%;
+      width: auto;
+      padding: 20px;
+      box-sizing: border-box;
     }
+
     .output-area label {
       margin-bottom: 10px;
       font-weight: bold;
     }
+
     #output {
       width: 100%;
       height: 100%;
@@ -91,15 +114,18 @@
     <button id="sendBtn">Send</button>
   </div>
 
+  <!-- Linea divisoria -->
+  <div class="divider" id="divider"></div>
+
   <div class="output-area">
     <label for="output">Result:</label>
     <textarea id="output" readonly></textarea>
   </div>
 
   <script>
+    // --- Funzione API ---
     async function chiediAI(selected_model, all_phrase) {
       const url = "/api/chat";
-
       const requestBody = {
         model: selected_model,
         message: all_phrase
@@ -128,6 +154,32 @@
 
       const all_phrase = `Фразу "${original_phrase}" я перевел таким образом: ${translated_phrase}. Напиши ответ на итальянском языке, правильный ли мой перевод.`;
       await chiediAI(selected_model, all_phrase);
+    });
+
+    // --- Script per il divisore trascinabile ---
+    const divider = document.getElementById('divider');
+    const leftPanel = document.querySelector('.form-fields');
+    let isDragging = false;
+
+    divider.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      divider.classList.add('dragging');
+      document.body.style.cursor = 'ew-resize';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      // Permetti di spostare un po’ più a destra
+      const maxRight = window.innerWidth - 150; // limite destro ridotto
+      const newWidth = Math.min(Math.max(e.clientX, 200), maxRight);
+      leftPanel.style.width = `${newWidth}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      divider.classList.remove('dragging');
+      document.body.style.cursor = 'default';
     });
   </script>
 </body>
