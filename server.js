@@ -1,22 +1,46 @@
+// Import dei moduli principali
 import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
+// Carica le variabili d’ambiente da .env
 dotenv.config();
 
+// Setup dei percorsi per ESM (import.meta.url)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Crea l’app Express
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Servi la pagina HTML
-app.use(express.static(__dirname));
+// === SERVE LA PAGINA PRINCIPALE ===
+// Invece di servire direttamente file statici, leggiamo index.html
+// e sostituiamo la variabile ${ADSENSE_ID} con il valore reale
+app.get("/", (req, res) => {
+  const htmlPath = path.join(__dirname, "index.html");
 
+  try {
+    let html = fs.readFileSync(htmlPath, "utf-8");
+
+    // Sostituisci il placeholder con il valore dell'ambiente
+    const adsenseId = process.env.ADSENSE_ID || "ca-pub-XXXXXXXXXXXX";
+    html = html.replace("${ADSENSE_ID}", adsenseId);
+
+    res.setHeader("Content-Type", "text/html");
+    res.send(html);
+  } catch (err) {
+    console.error("Errore nel caricamento di index.html:", err);
+    res.status(500).send("Errore nel caricamento della pagina");
+  }
+});
+
+// === API CHAT (Hugging Face) ===
 app.post("/api/chat", async (req, res) => {
   const { model, message } = req.body;
 
@@ -41,5 +65,9 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// === SERVE FILE STATICI (CSS, JS, IMMAGINI) ===
+app.use(express.static(__dirname));
+
+// === AVVIO SERVER ===
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server in ascolto su porta ${PORT}`));
